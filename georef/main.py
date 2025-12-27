@@ -1,23 +1,23 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import mysql.connector
+from datetime import datetime
 
 app = FastAPI(title="Georef Microservice")
 
 # ==============================
-# DATABASE CONFIG (Docker)
+# DATABASE CONFIG (Manual/Local)
 # ==============================
 DB_CONFIG = {
-    "host": "roadsense-postgres",
-    "dbname": "roadsense",
-    "user": "roadsense",
-    "password": "roadsense",
-    "port": 5432,
+    "host": "localhost",
+    "user": "root",
+    "password": "root", # Default for many local setups, user should verify
+    "database": "roadsense",
+    "port": 3306,
 }
 
 def get_db():
-    return psycopg2.connect(**DB_CONFIG)
+    return mysql.connector.connect(**DB_CONFIG)
 
 # ==============================
 # HEALTH
@@ -50,20 +50,19 @@ def georef(data: GeoRequest):
 
     cur.execute(
         """
-        INSERT INTO damages (image_id, score, priorite, geom)
-        VALUES (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
-        RETURNING id
+        INSERT INTO damages (image_id, score, priorite, latitude, longitude)
+        VALUES (%s, %s, %s, %s, %s)
         """,
         (
             data.image_id,
             data.score,
             data.priorite,
-            data.lon,
             data.lat,
+            data.lon,
         )
     )
 
-    damage_id = cur.fetchone()[0]
+    damage_id = cur.lastrowid
     conn.commit()
     cur.close()
     conn.close()
@@ -82,7 +81,7 @@ def georef(data: GeoRequest):
 @app.get("/damages")
 def get_all_damages():
     conn = get_db()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur = conn.cursor(dictionary=True)
 
     cur.execute(
         """
@@ -91,8 +90,8 @@ def get_all_damages():
             image_id,
             score,
             priorite,
-            ST_Y(geom) AS latitude,
-            ST_X(geom) AS longitude,
+            latitude,
+            longitude,
             created_at
         FROM damages
         ORDER BY created_at DESC

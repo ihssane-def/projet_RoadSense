@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://roadsense:roadsense@postgres:5432/roadsense"
+    "mysql+mysqlconnector://root:root@localhost:3306/roadsense"
 )
 
 engine = create_engine(DATABASE_URL)
