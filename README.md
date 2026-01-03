@@ -2,6 +2,10 @@
 
 Projet de détection et d'analyse de l'état des routes.
 
+
+https://github.com/user-attachments/assets/e110912e-0817-4803-a90a-f45eea87e860
+
+
 ## Architecture
 
 Le projet est composé de plusieurs microservices :
